@@ -1,4 +1,9 @@
 # test_pipeline.py
+import sys
+import os
+
+# Add project root to Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from data_pipeline.paper_ingestion import fetch_papers
 from data_pipeline.document_processor import chunk_text
@@ -22,3 +27,4 @@ results = search_embedding(query_vector, k=3)
 print("\nTop 3 relevant chunks:")
 for r in results:
     print(f"- {r['title']}: {r['chunk'][:150]}...\n")
+
