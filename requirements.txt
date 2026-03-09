@@ -1,0 +1,6 @@
+arxiv==2.1.0        # Access the arXiv API
+pypdf==4.0.1        # PDF parsing and text extraction
+langchain==0.1.0    # Framework for building LLM applications
+langchain-openai==0.0.2 # OpenAI integration (if using GPT models)
+python-dotenv==1.0.0 # Managing API keys and environment variables
+requests==2.31.0    # Handling HTTP requests
