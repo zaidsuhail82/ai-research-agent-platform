@@ -11,6 +11,7 @@ from data_pipeline.paper_ingestion import fetch_papers
 from data_pipeline.document_processor import chunk_text
 from rag.embeddings import embed_text
 from rag.vector_store import add_embedding, search_embedding
+from agents.summarizer_agent import summarize_chunks
 
 def main():
     print("Fetching sample papers from arXiv...")
@@ -38,3 +39,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
