@@ -36,7 +36,14 @@ def main():
     for r in results:
         print(f"- {r['title']}: {r['chunk'][:150]}...\n")
 
+print("\nGenerating research summary...\n")
+
+summary = summarize_chunks(results)
+
+print("Research Summary:\n")
+print(summary)
 
 if __name__ == "__main__":
     main()
+
 
