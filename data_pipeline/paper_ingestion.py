@@ -2,7 +2,7 @@ import arxiv
 import os
 from tqdm import tqdm
 
-def fetch_research_papers(query, max_results=5):
+def fetch_papers(query, max_results=5):
     """
     Searches arXiv and returns a list of paper metadata.
     """
@@ -38,3 +38,4 @@ if __name__ == "__main__":
         print(f"\n[{i+1}] {p['title']}")
         print(f"Authors: {', '.join(p['authors'][:3])}...")
         print(f"Link: {p['pdf_url']}")
+
