@@ -355,7 +355,9 @@ This project aims to demonstrate advanced AI engineering techniques including:
 ## Author
 
 M. Zaid Suhail
+
 M.Sc. Applied Artificial Intelligence
+
 M.Sc. Electrical Engineering
 
 Research interests:
