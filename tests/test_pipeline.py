@@ -1,0 +1,24 @@
+# test_pipeline.py
+
+from data_pipeline.paper_ingestion import fetch_papers
+from data_pipeline.document_processor import chunk_text
+from rag.embeddings import embed_text
+from rag.vector_store import add_embedding, search_embedding
+
+# Fetch sample papers
+papers = fetch_papers(query="reinforcement learning autonomous vehicles", max_results=3)
+
+for paper in papers:
+    chunks = chunk_text(paper["summary"], chunk_size=200, overlap=50)
+    for chunk in chunks:
+        vector = embed_text(chunk)
+        add_embedding(vector, metadata={"title": paper["title"], "chunk": chunk})
+
+# Test search
+query = "self-driving car safety"
+query_vector = embed_text(query)
+results = search_embedding(query_vector, k=3)
+
+print("\nTop 3 relevant chunks:")
+for r in results:
+    print(f"- {r['title']}: {r['chunk'][:150]}...\n")
