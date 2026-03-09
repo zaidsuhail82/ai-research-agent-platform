@@ -1,6 +1,4 @@
 
-# README.md
-
 # Autonomous AI Research Agent Platform
 
 An advanced multi-agent AI system that autonomously discovers, analyzes, and summarizes scientific research papers using Retrieval-Augmented Generation (RAG), vector databases, and large language models.
