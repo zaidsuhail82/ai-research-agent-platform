@@ -1,10 +1,6 @@
 
-
----
-
 # README.md
 
-```markdown
 # Autonomous AI Research Agent Platform
 
 An advanced multi-agent AI system that autonomously discovers, analyzes, and summarizes scientific research papers using Retrieval-Augmented Generation (RAG), vector databases, and large language models.
@@ -360,10 +356,9 @@ This project aims to demonstrate advanced AI engineering techniques including:
 
 ## Author
 
-M Zaid Suhail
-
-MS Electrical Engineering – Advanced Control Systems
-NUST Islamabad
+M. Zaid Suhail
+M.Sc. Applied Artificial Intelligence
+M.Sc. Electrical Engineering
 
 Research interests:
 
@@ -374,17 +369,3 @@ Research interests:
 * AI Infrastructure
 
 ---
-
-````
-
----
-
-# After pasting it
-
-Save the file, then run:
-
-```cmd
-git add README.md
-git commit -m "Added detailed project documentation"
-git push
-````
