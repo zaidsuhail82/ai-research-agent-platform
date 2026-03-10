@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 import os
 from data_pipeline.paper_ingestion import fetch_papers
@@ -5,6 +6,13 @@ from data_pipeline.document_processor import chunk_text
 from rag.embeddings import embed_text
 from rag.vector_store import add_embedding, search_embedding
 from agents.summarizer_agent import summarize_chunks
+
+st.set_page_config(
+    page_title="Zaid AI | Research Platform",
+    page_icon="logo.png", # This puts your logo in the browser tab!
+    layout="wide"
+)
+
 
 # 1. PAGE CONFIGURATION (Modern Look)
 st.set_page_config(
@@ -101,3 +109,4 @@ if st.button("🚀 Execute Autonomous Research"):
                     file_name=f"Research_Report_{query.replace(' ', '_')}.txt",
                     mime="text/plain"
                 )
+
