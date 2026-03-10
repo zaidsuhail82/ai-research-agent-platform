@@ -11,14 +11,16 @@ def query_hf_router(payload):
         response = requests.post(API_URL, headers=headers, json=payload)
         if response.status_code == 200:
             result = response.json()
-            return result[0].get("summary_text", "") if isinstance(result, list) else ""
-        return None
-    except Exception:
-        return None
+            if isinstance(result, list) and len(result) > 0:
+                return result[0].get("summary_text", "")
+            return "Unexpected JSON format from API."
+        return f"API Error: {response.status_code}"
+    except Exception as e:
+        return f"Connection failed: {str(e)}"
 
 def summarize_chunks(results):
     """
-    Standard RAG summary for the Autonomous Agent.
+    Standard RAG summary for the Global Research Tool.
     """
     context = " ".join([r['chunk'] for r in results])
     payload = {
@@ -29,15 +31,13 @@ def summarize_chunks(results):
 
 def generate_lit_review(content, style="IEEE", word_count=100):
     """
-    ENGINEERED SYNTHESIS:
-    Calculates dynamic token limits based on your word count selection
-    to ensure the AI doesn't just stick to 40-50 words.
+    Professional Synthesis Agent for Literature Reviews.
+    Note: The 'Last Name, F.' part is prepended in app.py.
     """
     if not content:
         return "No content provided."
 
-    # Senior Level Logic: Map word count to token constraints
-    # BART tokens are roughly 1.3x word count.
+    # Dynamic BART constraints (Approx 1.3 tokens per word)
     limits = {
         30:  {"min": 25,  "max": 45},
         50:  {"min": 45,  "max": 75},
@@ -48,11 +48,10 @@ def generate_lit_review(content, style="IEEE", word_count=100):
         250: {"min": 240, "max": 350}
     }
     
-    # Fallback to 100 if something goes wrong
     param = limits.get(int(word_count), limits[100])
 
-    # Guiding the model based on style
-    prompt = f"Write a formal {style} style academic literature review: {content}"
+    # Senior-Level Engineering Prompt
+    prompt = f"Critically summarize the key findings, methodology, and scientific contribution of this text in a formal {style} academic tone: {content}"
 
     payload = {
         "inputs": prompt[:3000],
@@ -60,7 +59,7 @@ def generate_lit_review(content, style="IEEE", word_count=100):
             "max_length": param["max"],
             "min_length": param["min"],
             "do_sample": False,
-            "repetition_penalty": 1.2 # Prevents the AI from repeating itself in longer reviews
+            "repetition_penalty": 1.2 
         }
     }
 
