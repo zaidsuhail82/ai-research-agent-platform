@@ -2,7 +2,7 @@ streamlit
 arxiv==2.1.0
 pypdf==4.0.1
 langchain==0.1.0
-langchain-openai==0.0.2
+langchain-community==0.0.38
 python-dotenv==1.0.0
 requests==2.31.0
 sentence-transformers
