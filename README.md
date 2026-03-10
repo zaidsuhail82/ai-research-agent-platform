@@ -14,7 +14,7 @@
     <img src="/media/repo-banner.png" width="100%" alt="AI Research Agent Banner" />
   </p>
 
-  <a href="https://your-streamlit-link.streamlit.app">
+  <a href="https://zaid-ai-research-agent.streamlit.app/">
     <img src="https://img.shields.io/badge/Live_Platform-00f2fe?style=for-the-badge&logo=google-chrome&logoColor=black" />
   </a>
   <a href="https://linkedin.com/in/zaidsuhail">
