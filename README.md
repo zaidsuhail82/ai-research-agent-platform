@@ -1,11 +1,31 @@
-
 # Autonomous AI Research Agent Platform
 
-<p align="center">
-  <img src="media/repo-banner.png" alt="AI Research Agent Platform Banner" width="100%">
-</p>
-<hr/>
+<div align="center">
+  <img src="media/logo.png" width="80" />
+  
+  <h1>🚀 AI Research Agent Platform</h1>
+  
+  <p>
+    <b>Engineered by <a href="https://linkedin.com/in/zaidsuhail">Muhammad Zaid Suhail</a></b><br>
+    <i>Applied AI & Electrical Engineer</i>
+  </p>
 
+  <p align="center">
+    <img src="/media/repo-banner.png" width="100%" alt="AI Research Agent Banner" />
+  </p>
+
+  <a href="https://your-streamlit-link.streamlit.app">
+    <img src="https://img.shields.io/badge/Live_Platform-00f2fe?style=for-the-badge&logo=google-chrome&logoColor=black" />
+  </a>
+  <a href="https://linkedin.com/in/zaidsuhail">
+    <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" />
+  </a>
+  <a href="https://github.com/zaidsuhail82">
+    <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" />
+  </a>
+
+  <br />
+</div>
 An advanced RAG-based multi-agent system that autonomously discovers, analyzes, and summarizes scientific research papers...
 An advanced multi-agent AI system that autonomously discovers, analyzes, and summarizes scientific research papers using Retrieval-Augmented Generation (RAG), vector databases, and large language models.
 
