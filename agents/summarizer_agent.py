@@ -1,50 +1,68 @@
 import requests
 import streamlit as st
 
-# UPDATED: Using the 2026 Router Endpoint
+# 2026 Router Endpoint
 API_URL = "https://router.huggingface.co/hf-inference/models/facebook/bart-large-cnn"
-
-# Accessing the token from Streamlit Secrets
 headers = {"Authorization": f"Bearer {st.secrets['HUGGINGFACE_TOKEN']}"}
 
-def summarize_chunks(chunks):
-    """
-    Summarize a list of text chunks using Hugging Face Router API.
-    Returns a clean logical summary string.
-    """
-    if not chunks:
-        return "No text provided for summarization."
+def query_hf_router(payload):
+    """Internal helper to communicate with the Hugging Face Router."""
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload)
+        if response.status_code == 200:
+            result = response.json()
+            return result[0].get("summary_text", "") if isinstance(result, list) else ""
+        return None
+    except Exception:
+        return None
 
-    # Combine chunks into a single context string
-    text_to_summarize = " ".join([c["chunk"] for c in chunks])
-    text_to_summarize = text_to_summarize[:3000]  # Respecting context window limits
+def summarize_chunks(results):
+    """
+    Standard RAG summary for the Autonomous Agent.
+    """
+    context = " ".join([r['chunk'] for r in results])
+    payload = {
+        "inputs": context[:3000],
+        "parameters": {"max_length": 250, "min_length": 80, "do_sample": False}
+    }
+    return query_hf_router(payload) or "Summarization failed."
+
+def generate_lit_review(content, style="IEEE", word_count=100):
+    """
+    ENGINEERED SYNTHESIS:
+    Calculates dynamic token limits based on your word count selection
+    to ensure the AI doesn't just stick to 40-50 words.
+    """
+    if not content:
+        return "No content provided."
+
+    # Senior Level Logic: Map word count to token constraints
+    # BART tokens are roughly 1.3x word count.
+    limits = {
+        30:  {"min": 25,  "max": 45},
+        50:  {"min": 45,  "max": 75},
+        80:  {"min": 70,  "max": 110},
+        100: {"min": 90,  "max": 140},
+        150: {"min": 140, "max": 200},
+        200: {"min": 190, "max": 270},
+        250: {"min": 240, "max": 350}
+    }
+    
+    # Fallback to 100 if something goes wrong
+    param = limits.get(int(word_count), limits[100])
+
+    # Guiding the model based on style
+    prompt = f"Write a formal {style} style academic literature review: {content}"
 
     payload = {
-        "inputs": text_to_summarize,
+        "inputs": prompt[:3000],
         "parameters": {
-            "max_length": 250, 
-            "min_length": 80, 
-            "do_sample": False
+            "max_length": param["max"],
+            "min_length": param["min"],
+            "do_sample": False,
+            "repetition_penalty": 1.2 # Prevents the AI from repeating itself in longer reviews
         }
     }
 
-    try:
-        response = requests.post(API_URL, headers=headers, json=payload)
-        
-        # Check for successful response
-        if response.status_code == 200:
-            result = response.json()
-            # Extract only the summary text string
-            if isinstance(result, list) and len(result) > 0:
-                return result[0].get("summary_text", "No summary text returned.")
-            return "Unexpected JSON format from API."
-        
-        # Specific handling for the 410 Gone / Migration error
-        elif response.status_code == 410 or "supported" in response.text:
-            return "⚠️ API Migration Error: The Hugging Face endpoint has moved. Ensure you are using the 'router.huggingface.co' URL."
-        
-        else:
-            return f"Agent Error ({response.status_code}): {response.text}"
-
-    except Exception as e:
-        return f"Summarization failed: {str(e)}"
+    result = query_hf_router(payload)
+    return result or "Literature review generation failed."
