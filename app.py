@@ -13,36 +13,39 @@ if 'selected_ids' not in st.session_state: st.session_state.selected_ids = set()
 if 'generated_review' not in st.session_state: st.session_state.generated_review = ""
 
 # ----------------------------------------------------------------
-# 2. COMPACT SENIOR UI (CSS)
+# 2. COMPACT & CENTERED UI (CSS)
 # ----------------------------------------------------------------
-st.set_page_config(page_title="AI Research Agent | Zaid Suhail", layout="wide")
+# Note: favicon set here
+l_path = "media/logo.png" if os.path.exists("media/logo.png") else "logo.png"
+st.set_page_config(
+    page_title="AI Research Agent | Zaid Suhail", 
+    page_icon=l_path if os.path.exists(l_path) else None,
+    layout="wide"
+)
 
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono&display=swap');
     
-    /* Minimize Whitespace & Global Background */
     .stApp { background: #0b0e14; color: #c9d1d9; font-family: 'Inter', sans-serif; }
-    .block-container { padding-top: 1rem !important; padding-bottom: 0rem !important; }
+    .block-container { padding-top: 1.5rem !important; }
     
-    /* Centered Branding - Reduced Spacing */
-    .brand-container { text-align: center; margin-bottom: 1.5rem; }
+    /* Centered Branding */
+    .brand-container { 
+        display: flex; flex-direction: column; align-items: center; 
+        text-align: center; margin-bottom: 1.5rem; 
+    }
     .hero-title {
         background: linear-gradient(90deg, #fff, #00f2fe);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 2.8rem; font-weight: 800; margin: 0;
+        font-size: 2.8rem; font-weight: 800; margin: 5px 0;
     }
     .hero-sub { color: #8b949e; font-family: 'JetBrains Mono'; font-size: 0.85rem; letter-spacing: 1px; }
 
-    /* Glass Cards */
-    .glass-card {
-        background: rgba(22, 27, 34, 0.9);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        padding: 1.5rem; margin-bottom: 1rem;
-    }
-
+    /* Forms and Inputs */
+    .stForm { border: none !important; padding: 0 !important; }
+    
     /* Literature Review Box */
     .lit-review-box {
         background: #010409;
@@ -50,12 +53,6 @@ st.markdown("""
         padding: 20px; border-radius: 8px;
         line-height: 1.7; font-size: 1rem;
         color: #e6edf3; white-space: pre-wrap;
-    }
-
-    /* Citation Block */
-    .citation-block {
-        background: #161b22; border: 1px solid #30363d;
-        padding: 15px; border-radius: 6px; margin-bottom: 15px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -70,7 +67,7 @@ class ScientificLexicon:
         return random.choice([
             "pioneered", "formulated", "scrutinized", "elucidated", 
             "analyzed", "demonstrated", "implemented", "developed", 
-            "illustrated", "quantified", "evaluated", "pioneered"
+            "illustrated", "quantified", "evaluated"
         ])
 
 def format_academic_line(paper, style, index):
@@ -103,12 +100,11 @@ def get_arxiv_meta(url):
     except: return None
 
 # ----------------------------------------------------------------
-# 4. BRANDING (CENTERED & COMPACT)
+# 4. BRANDING (CENTERED)
 # ----------------------------------------------------------------
 st.markdown('<div class="brand-container">', unsafe_allow_html=True)
-l_path = "media/logo.png" if os.path.exists("media/logo.png") else "logo.png"
 if os.path.exists(l_path):
-    st.image(l_path, width=120) # Reduced width for professional feel
+    st.image(l_path, width=100)
 st.markdown('<div class="hero-title">AI RESEARCH AGENT</div>', unsafe_allow_html=True)
 st.markdown('<div class="hero-sub">MUHAMMAD ZAID SUHAIL | APPLIED AI & ELECTRICAL ENGINEER</div>', unsafe_allow_html=True)
 st.markdown('</div>', unsafe_allow_html=True)
@@ -116,55 +112,63 @@ st.markdown('</div>', unsafe_allow_html=True)
 # ----------------------------------------------------------------
 # 5. UNIFIED RESEARCH DASHBOARD
 # ----------------------------------------------------------------
-tab_main, tab_citations = st.tabs(["🚀 RESEARCH ENGINE", "📂 CITATION & LATEX GENERATOR"])
+tab_main, tab_citations = st.tabs(["🚀 RESEARCH ENGINE", "📂 CITATION & LATEX"])
 
 with tab_main:
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns([5, 2, 2])
-    with c1: 
-        query = st.text_input("Scientific Keyword Search", placeholder="e.g. 'Power System Stability LLM'", label_visibility="collapsed")
-    with c2:
-        style_choice = st.selectbox("Citation Style", ["IEEE", "Harvard"], label_visibility="collapsed")
-    with c3:
-        word_limit = st.select_slider("Words/Paper", [50, 100, 150, 200, 250], value=100)
-    
-    if st.button("🔍 Initialize Discovery"):
-        if query:
-            from data_pipeline.paper_ingestion import fetch_papers
-            st.session_state.papers = fetch_papers(query, max_results=8)
-            st.session_state.selected_ids = set()
-            st.session_state.generated_review = ""
-        else: st.warning("Please enter a research query.")
-    st.markdown('</div>', unsafe_allow_html=True)
+    # --- SEARCH FORM (Allows Enter to Search) ---
+    with st.form("search_form", clear_on_submit=False):
+        c1, c2, c3 = st.columns([5, 2, 2])
+        with c1: 
+            query = st.text_input("Scientific Keyword Search", placeholder="Type keywords and press Enter...")
+        with c2:
+            style_choice = st.selectbox("Style", ["IEEE", "Harvard"])
+        with c3:
+            word_limit = st.select_slider("Words", [50, 100, 150, 200, 250], value=100)
+        
+        search_submitted = st.form_submit_button("🔍 Initialize Discovery")
+        
+        if search_submitted:
+            if query:
+                from data_pipeline.paper_ingestion import fetch_papers
+                st.session_state.papers = fetch_papers(query, max_results=8)
+                st.session_state.selected_ids = set() # Reset on new search
+                st.session_state.generated_review = ""
+            else:
+                st.warning("Please enter keywords.")
 
     if st.session_state.papers:
         col_list, col_gen = st.columns([1, 1])
+        
         with col_list:
-            st.subheader("📚 Results")
-            for i, p in enumerate(st.session_state.papers):
-                with st.container():
-                    st.markdown(f"**{p['title']}**")
-                    if st.checkbox(f"Add to Review", key=f"chk_{p['id']}"):
-                        st.session_state.selected_ids.add(p['id'])
-                    else:
-                        st.session_state.selected_ids.discard(p['id'])
-                    with st.expander("Abstract"):
-                        st.write(p['summary'])
-                        st.markdown(f"[arXiv Link](https://arxiv.org/abs/{p['id']})")
-                    st.divider()
+            st.subheader("📚 Discovery Results")
+            for p in st.session_state.papers:
+                # Checkbox selection logic
+                checked = st.checkbox(f"Add: {p['title'][:60]}...", key=f"chk_{p['id']}", 
+                                     value=p['id'] in st.session_state.selected_ids)
+                if checked:
+                    st.session_state.selected_ids.add(p['id'])
+                else:
+                    st.session_state.selected_ids.discard(p['id'])
+                
+                with st.expander("Abstract & Details"):
+                    st.write(p['summary'])
+                    st.markdown(f"**ID:** {p['id']} | [arXiv Link](https://arxiv.org/abs/{p['id']})")
+                st.divider()
 
         with col_gen:
-            st.subheader("✍️ Synthesis")
+            st.subheader("✍️ Literature Synthesis")
             if not st.session_state.selected_ids:
-                st.info("Select papers to begin.")
+                st.info("Check papers on the left to begin synthesis.")
             else:
                 if st.button("✨ Generate Synthesis"):
                     from agents.summarizer_agent import generate_lit_review
                     full_review = ""
                     idx = 1
-                    for p_id in st.session_state.selected_ids:
-                        p_data = next(item for item in st.session_state.papers if item["id"] == p_id)
-                        with st.spinner(f"Processing..."):
+                    # Iterate through the papers in the order they appear in the results
+                    selected_data = [p for p in st.session_state.papers if p['id'] in st.session_state.selected_ids]
+                    
+                    for p_data in selected_data:
+                        with st.spinner(f"Synthesizing {p_data['id']}..."):
                             header = format_academic_line(p_data, style_choice, idx)
                             body = generate_lit_review(p_data['summary'], style=style_choice, word_count=word_limit)
                             full_review += f"{header} {body}\n\n"
@@ -173,46 +177,30 @@ with tab_main:
 
                 if st.session_state.generated_review:
                     st.markdown(f'<div class="lit-review-box">{st.session_state.generated_review}</div>', unsafe_allow_html=True)
-                    st.download_button("📥 Download", st.session_state.generated_review, file_name="Report.txt")
+                    st.download_button("📥 Download Report", st.session_state.generated_review, file_name="Zaid_Research.txt")
 
-# --- TAB 2: CITATION GENERATOR (DUAL MODE) ---
+# --- TAB 2: CITATION GENERATOR ---
 with tab_citations:
-    mode = st.radio("Citation Mode:", ["Selected from Discovery", "Manually Paste URL"], horizontal=True)
+    mode = st.radio("Mode:", ["Discovery Selection", "Manual URL"], horizontal=True)
     
-    cite_papers = []
-    
-    if mode == "Selected from Discovery":
-        if not st.session_state.selected_ids:
-            st.warning("No papers selected in Tab 1.")
-        else:
-            for pid in st.session_state.selected_ids:
-                cite_papers.append(next(item for item in st.session_state.papers if item["id"] == pid))
+    cite_list = []
+    if mode == "Discovery Selection":
+        cite_list = [p for p in st.session_state.papers if p['id'] in st.session_state.selected_ids]
     else:
-        manual_url = st.text_input("Paste arXiv URL (e.g., https://arxiv.org/abs/2301.00000)")
-        if st.button("Fetch Manual Citation"):
-            m_data = get_arxiv_meta(manual_url)
-            if m_data: cite_papers.append(m_data)
-            else: st.error("Could not fetch metadata.")
+        manual_url = st.text_input("arXiv URL:")
+        if st.button("Fetch Citation"):
+            m = get_arxiv_meta(manual_url)
+            if m: cite_list.append(m)
 
-    if cite_papers:
-        for i, p in enumerate(cite_papers):
-            st.markdown(f'<div class="citation-block">', unsafe_allow_html=True)
-            st.markdown(f"**Paper:** {p['title']}")
-            
-            # 1. Plain Text Citation
-            if style_choice == "IEEE":
-                txt = f"[{i+1}] {p['authors']}, \"{p['title']}\", arXiv:{p['id']}, {p.get('year','2026')}."
-            else:
-                txt = f"{p['authors'].split(',')[0]} ({p.get('year','2026')}). {p['title']}. Available at: https://arxiv.org/abs/{p['id']}"
-            
-            st.text_area("Plain Text Citation", txt, height=70, key=f"txt_{p['id']}")
-            
-            # 2. LaTeX Code
-            bib = f"@article{{{p['id']},\n  title={{{p['title']}}},\n  author={{{p['authors']}}},\n  year={{{p.get('year','2026')}}},\n  journal={{arXiv preprint arXiv:{p['id']}}}\n}}"
-            st.code(bib, language="latex")
-            st.markdown('</div>', unsafe_allow_html=True)
+    for i, p in enumerate(cite_list):
+        st.markdown(f"### Reference: {p['title']}")
+        if style_choice == "IEEE":
+            cite_text = f"[{i+1}] {p['authors']}, \"{p['title']}\", arXiv:{p['id']}, 2026."
+        else:
+            cite_text = f"{p['authors'].split(',')[0]} (2026). {p['title']}. Available at: https://arxiv.org/abs/{p['id']}"
+        
+        st.code(cite_text, language="text")
+        st.code(f"@article{{{p['id']},\n  title={{{p['title']}}},\n  author={{{p['authors']}}},\n  year={{2026}}\n}}", language="latex")
+        st.divider()
 
-# ----------------------------------------------------------------
-# 6. FOOTER
-# ----------------------------------------------------------------
-st.markdown('<div style="text-align:center; padding:10px; font-size:0.8rem; color:#444;">Built by Zaid Suhail | 2026</div>', unsafe_allow_html=True)
+st.markdown('<div style="text-align:center; padding-top:20px; color:#444;">Developed by Zaid Suhail | 2026</div>', unsafe_allow_html=True)
