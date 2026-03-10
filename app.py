@@ -1,60 +1,103 @@
 import streamlit as st
+import os
 from data_pipeline.paper_ingestion import fetch_papers
 from data_pipeline.document_processor import chunk_text
 from rag.embeddings import embed_text
 from rag.vector_store import add_embedding, search_embedding
 from agents.summarizer_agent import summarize_chunks
 
-# Page Config
-st.set_page_config(page_title="AI Research Agent", layout="wide")
-st.title("🔬 AI Research Agent Platform")
-st.markdown("Automated arXiv Ingestion, Semantic Search, and BART Summarization")
+# 1. PAGE CONFIGURATION (Modern Look)
+st.set_page_config(
+    page_title="Zaid | AI Research Platform",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
-# Sidebar for Search Settings
+# 2. CUSTOM CSS (For that "High-End" feel)
+st.markdown("""
+    <style>
+    .main { background-color: #f5f7f9; }
+    .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #007bff; color: white; }
+    .report-box { padding: 20px; border-radius: 10px; background-color: white; border-left: 5px solid #007bff; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# 3. SIDEBAR (Personal Branding & Logo)
 with st.sidebar:
-    st.header("Search Settings")
-    max_results = st.slider("Number of papers to fetch", 1, 10, 3)
-    chunk_size = st.number_input("Chunk Size", value=500)
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=200)
+    
+    st.title("Project Credits")
+    st.markdown("""
+    **Architect:** M. Zaid Suhail  
+    *MSc Applied Artificial Intelligence* *MSc Electrical Engineering*
+    
+    ---
+    **System Status:** 🟢 Operational  
+    **Model:** BART-Large-CNN  
+    **Database:** In-Memory Vector Index
+    """)
+    
+    st.divider()
+    st.header("⚙️ Research Parameters")
+    # Using Session State to ensure these values are locked in during the run
+    num_papers = st.slider("Papers to Ingest", 1, 10, 5)
+    c_size = st.select_slider("Chunk Granularity", options=[300, 500, 800, 1200], value=500)
+    top_k = st.number_input("Retrieval Top-K", value=5)
 
-# User Input
-query = st.text_input("Enter a research topic (e.g., 'Neural ODEs' or 'Autonomous Driving'):")
+# 4. MAIN INTERFACE
+st.title("🔬 Autonomous AI Research Agent")
+st.caption("Engineered by M. Zaid Suhail | London South Bank University")
 
-if st.button("Start Research"):
-    if query:
-        with st.status("🔍 Working..."):
-            # 1. Fetch
-            st.write("Fetching papers from arXiv...")
-            papers = fetch_papers(query=query, max_results=max_results)
+query = st.text_input("Enter Research Topic", placeholder="e.g., Neural Ordinary Differential Equations in Robotics")
+
+if st.button("🚀 Execute Autonomous Research"):
+    if not query:
+        st.error("Please provide a research query.")
+    else:
+        # FIX: CLEAR PREVIOUS DATA
+        # To make results dynamic, we simulate a fresh environment per run
+        with st.status("🛠️ AI Agents Coordinating...", expanded=True) as status:
             
-            # 2. Process & Embed
-            st.write(f"Processing {len(papers)} papers...")
-            all_chunks = []
+            st.write("📡 Ingesting papers from arXiv...")
+            papers = fetch_papers(query=query, max_results=num_papers)
+            
+            st.write(f"🧩 Processing and Chunking at {c_size} tokens...")
             for paper in papers:
-                chunks = chunk_text(paper["summary"], chunk_size=chunk_size)
+                # We pass the slider value here to make it dynamic!
+                chunks = chunk_text(paper["summary"], chunk_size=c_size)
                 for chunk in chunks:
                     vector = embed_text(chunk)
-                    metadata = {"title": paper["title"], "chunk": chunk}
-                    add_embedding(vector, metadata)
-                    all_chunks.append(metadata)
+                    add_embedding(vector, {"title": paper["title"], "chunk": chunk})
 
-            # 3. Semantic Search
-            st.write("Performing semantic search...")
+            st.write("🧠 Retrieving Semantic Context...")
             query_vector = embed_text(query)
-            results = search_embedding(query_vector, k=5)
+            # Use the 'top_k' from user input
+            results = search_embedding(query_vector, k=top_k)
+            
+            status.update(label="Analysis Complete", state="complete")
 
-        # UI LAYOUT: Left side for Chunks, Right side for Summary
+        # 5. RESULT DISPLAY
         col1, col2 = st.columns([1, 1])
 
         with col1:
-            st.subheader("📍 Relevant Chunks")
+            st.subheader("📍 Knowledge Retrieval")
             for r in results:
-                with st.expander(f"Source: {r['title'][:50]}..."):
+                with st.expander(f"📄 {r['title'][:60]}..."):
                     st.write(r['chunk'])
 
         with col2:
-            st.subheader("📝 AI Research Summary")
-            with st.spinner("BART is thinking..."):
-                summary = summarize_chunks(results)
-                st.info(summary)
-    else:
-        st.warning("Please enter a query first!")
+            st.subheader("📝 AI Synthetic Report")
+            with st.spinner("BART Agent generating abstractive summary..."):
+                # We pass the results to the agent
+                report = summarize_chunks(results)
+                st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
+                
+                # Professional Feature: Download Button
+                st.download_button(
+                    label="📥 Download Research Report",
+                    data=report,
+                    file_name=f"Research_Report_{query.replace(' ', '_')}.txt",
+                    mime="text/plain"
+                )
