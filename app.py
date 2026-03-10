@@ -16,46 +16,45 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# -------------------------
-# 2. CUSTOM CSS
-# -------------------------
+# 2. CUSTOM CSS (Engineering Aesthetic)
 st.markdown("""
-<style>
-.main { background-color: #f8f9fa; }
-.stButton>button { 
-    width: 100%; 
-    border-radius: 8px; 
-    height: 3.5em; 
-    background-color: #00bcd4; 
-    color: white;
-    font-weight: bold;
-    border: none;
-}
-.report-box { 
-    padding: 25px; 
-    border-radius: 12px; 
-    background-color: #ffffff; 
-    border-left: 6px solid #00bcd4;
-    box-shadow: 2px 2px 12px rgba(0,0,0,0.08);
-    font-family: 'Segoe UI', sans-serif;
-    line-height: 1.6;
-    white-space: pre-wrap;
-}
-.error-box {
-    padding: 15px;
-    background-color: #ffeeee;
-    border-left: 5px solid #ff4b4b;
-    color: #990000;
-    border-radius: 5px;
-    font-family: 'Segoe UI', sans-serif;
-}
-.copy-button {
-    margin-top: 10px;
-}
-</style>
-""", unsafe_allow_html=True)
+    <style>
+    .main { background-color: #f8f9fa; }
+    
+    /* The Report Container */
+    .report-box { 
+        padding: 20px; 
+        border-radius: 12px; 
+        background-color: #ffffff; 
+        border-left: 6px solid #00bcd4;
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+        
+        /* FIX FOR SCROLLING LINE: */
+        white-space: pre-wrap;      /* Forces text to wrap to the next line */
+        word-wrap: break-word;     /* Breaks long words if necessary */
+        
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: #1e1e1e;
+        
+        /* FIX FOR EMPTY BOX: */
+        min-height: 50px; 
+        max-height: 600px;
+        overflow-y: auto;          /* Only scroll vertically if it's very long */
+    }
 
-# -------------------------
+    .stButton>button { 
+        width: 100%; 
+        border-radius: 8px; 
+        height: 3.5em; 
+        background-color: #00bcd4; 
+        color: white;
+        font-weight: bold;
+        border: none;
+    }
+    </style>
+    """, unsafe_allow_html=True)# -------------------------
 # 3. SIDEBAR
 # -------------------------
 with st.sidebar:
@@ -142,3 +141,4 @@ if st.button("🚀 Execute Autonomous Research"):
                     }
                     </script>
                     """, unsafe_allow_html=True)
+
