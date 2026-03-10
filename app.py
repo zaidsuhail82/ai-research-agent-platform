@@ -6,10 +6,10 @@ from rag.embeddings import embed_text
 from rag.vector_store import add_embedding, search_embedding
 from agents.summarizer_agent import summarize_chunks
 
-# 1. PAGE CONFIGURATION (Must be the very first Streamlit command)
+# 1. PAGE CONFIGURATION
 st.set_page_config(
     page_title="Zaid AI | Research Platform",
-    page_icon="media/logo.png", # Uses your new logo for the browser tab
+    page_icon="media/logo.png", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -33,13 +33,22 @@ st.markdown("""
         background-color: white; 
         border-left: 6px solid #00bcd4;
         box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+    }
+    .error-box {
+        padding: 15px;
+        color: #721c24;
+        background-color: #f8d7da;
+        border-radius: 8px;
+        border: 1px solid #f5c6cb;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # 3. SIDEBAR (Branding & Parameters)
 with st.sidebar:
-    # Pointing to your new media folder
     logo_path = "media/logo.png"
     if os.path.exists(logo_path):
         st.image(logo_path, width=200)
@@ -66,6 +75,8 @@ st.title("🔬 Autonomous AI Research Agent")
 st.caption("A Persistent Learning Loop for Scientific Discovery | Engineered by M. Zaid Suhail")
 
 query = st.text_input("Enter Research Topic", placeholder="e.g., Neural Ordinary Differential Equations in Robotics")
+
+
 
 if st.button("🚀 Execute Autonomous Research"):
     if not query:
@@ -94,6 +105,8 @@ if st.button("🚀 Execute Autonomous Research"):
 
         with col1:
             st.subheader("📍 Knowledge Retrieval")
+            if not results:
+                st.warning("No relevant context found in current vector space.")
             for r in results:
                 with st.expander(f"📄 {r['title'][:60]}..."):
                     st.write(r['chunk'])
@@ -101,12 +114,19 @@ if st.button("🚀 Execute Autonomous Research"):
         with col2:
             st.subheader("📝 AI Synthetic Report")
             with st.spinner("BART Agent generating abstractive summary..."):
+                # Call the agent
                 report = summarize_chunks(results)
-                st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
                 
-                st.download_button(
-                    label="📥 Download Research Report",
-                    data=report,
-                    file_name=f"Research_Report_{query.replace(' ', '_')}.txt",
-                    mime="text/plain"
-                )
+                # Check if the report contains the Hugging Face API error string
+                if "error" in report.lower() or "not supported" in report.lower():
+                    st.markdown(f'<div class="error-box"><b>API Migration Alert:</b> {report}</div>', unsafe_allow_html=True)
+                else:
+                    # Render the actual summary text
+                    st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
+                    
+                    st.download_button(
+                        label="📥 Download Research Report",
+                        data=report,
+                        file_name=f"Research_Report_{query.replace(' ', '_')}.txt",
+                        mime="text/plain"
+                    )
