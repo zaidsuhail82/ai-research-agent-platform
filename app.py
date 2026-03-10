@@ -119,8 +119,20 @@ with st.sidebar:
 # -------------------------
 # 5. MAIN INTERFACE
 # -------------------------
+# 4. MAIN INTERFACE
 st.title("🔬 Autonomous AI Research Agent")
-st.caption("A Persistent Learning Loop for Scientific Discovery | Engineered by M. Zaid Suhail")
+
+# Enhanced Branding for your name
+st.markdown("""
+    <div style="margin-top: -15px; margin-bottom: 20px;">
+        <span style="color: #6c757d; font-size: 1.1rem; opacity: 0.8;">
+            A Persistent Learning Loop for Scientific Discovery | 
+        </span>
+        <span style="color: #00bcd4; font-size: 1.25rem; font-weight: 800; letter-spacing: 0.5px;">
+            Engineered by M. Zaid Suhail
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
 
 # --- CITATION GENERATOR SECTION ---
 with st.expander("🔖 Citation Generator (arXiv)", expanded=False):
@@ -182,3 +194,4 @@ if st.button("🚀 Execute Autonomous Research"):
                 else:
                     st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
                     st.code(report, language=None) # Clickable copy-box
+
