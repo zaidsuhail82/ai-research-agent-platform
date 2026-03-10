@@ -171,3 +171,4 @@ else: # Global Research
             report = summarize_chunks(results)
         
         st.markdown(f'<div class="report-box"><b>Synthesis:</b><br>{report}</div>', unsafe_allow_html=True)
+
