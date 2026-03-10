@@ -17,7 +17,7 @@ st.set_page_config(
 )
 
 # -------------------------
-# 2. CUSTOM CSS (Engineering Aesthetic)
+# 2. CUSTOM CSS
 # -------------------------
 st.markdown("""
 <style>
@@ -34,11 +34,12 @@ st.markdown("""
 .report-box { 
     padding: 25px; 
     border-radius: 12px; 
-    background-color: white; 
+    background-color: #ffffff; 
     border-left: 6px solid #00bcd4;
-    box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+    box-shadow: 2px 2px 12px rgba(0,0,0,0.08);
     font-family: 'Segoe UI', sans-serif;
     line-height: 1.6;
+    white-space: pre-wrap;
 }
 .error-box {
     padding: 15px;
@@ -46,12 +47,16 @@ st.markdown("""
     border-left: 5px solid #ff4b4b;
     color: #990000;
     border-radius: 5px;
+    font-family: 'Segoe UI', sans-serif;
+}
+.copy-button {
+    margin-top: 10px;
 }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------
-# 3. SIDEBAR (Branding & Parameters)
+# 3. SIDEBAR
 # -------------------------
 with st.sidebar:
     logo_path = "media/logo.png"
@@ -86,9 +91,6 @@ if st.button("🚀 Execute Autonomous Research"):
     if not query:
         st.error("Please provide a research query.")
     else:
-        # -------------------------
-        # STATUS & PIPELINE EXECUTION
-        # -------------------------
         with st.status("🛠️ AI Agents Coordinating...", expanded=True) as status:
             st.write("📡 Ingesting papers from arXiv...")
             papers = fetch_papers(query=query, max_results=num_papers)
@@ -127,5 +129,16 @@ if st.button("🚀 Execute Autonomous Research"):
                 if not report:
                     st.markdown('<div class="error-box">Error generating summary.</div>', unsafe_allow_html=True)
                 else:
-                    st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
-                    st.download_button("📥 Download Report", data=report, file_name="Research_Report.txt")
+                    # Modern live text box
+                    st.markdown(f'<div class="report-box" id="report-box">{report}</div>', unsafe_allow_html=True)
+                    
+                    # Copy button
+                    st.code(report, language=None)
+                    st.markdown("""
+                    <script>
+                    function copyToClipboard(text) {
+                        navigator.clipboard.writeText(text);
+                        alert('Summary copied to clipboard!');
+                    }
+                    </script>
+                    """, unsafe_allow_html=True)
