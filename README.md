@@ -1,6 +1,12 @@
 
 # Autonomous AI Research Agent Platform
 
+<p align="center">
+  <img src="media/repo-banner.png" alt="AI Research Agent Platform Banner" width="100%">
+</p>
+<hr/>
+
+An advanced RAG-based multi-agent system that autonomously discovers, analyzes, and summarizes scientific research papers...
 An advanced multi-agent AI system that autonomously discovers, analyzes, and summarizes scientific research papers using Retrieval-Augmented Generation (RAG), vector databases, and large language models.
 
 This project demonstrates how modern AI systems can combine autonomous agents, knowledge retrieval, and reasoning to build a scalable AI research assistant.
