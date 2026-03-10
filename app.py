@@ -33,16 +33,15 @@ st.markdown("""
         background-color: white; 
         border-left: 6px solid #00bcd4;
         box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Segoe UI', sans-serif;
         line-height: 1.6;
-        color: #333;
     }
     .error-box {
         padding: 15px;
-        color: #721c24;
-        background-color: #f8d7da;
-        border-radius: 8px;
-        border: 1px solid #f5c6cb;
+        background-color: #ffeeee;
+        border-left: 5px solid #ff4b4b;
+        color: #990000;
+        border-radius: 5px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -55,7 +54,6 @@ with st.sidebar:
     else:
         st.title("Synthetic Loop AI")
     
-    st.markdown("### Project Credits")
     st.info("""
     **Architect:** M. Zaid Suhail  
     *Applied AI & Electrical Engineer*
@@ -74,7 +72,7 @@ with st.sidebar:
 st.title("🔬 Autonomous AI Research Agent")
 st.caption("A Persistent Learning Loop for Scientific Discovery | Engineered by M. Zaid Suhail")
 
-query = st.text_input("Enter Research Topic", placeholder="e.g., Neural Ordinary Differential Equations in Robotics")
+query = st.text_input("Enter Research Topic", placeholder="e.g., Neural Ordinary Differential Equations")
 
 
 
@@ -83,7 +81,6 @@ if st.button("🚀 Execute Autonomous Research"):
         st.error("Please provide a research query.")
     else:
         with st.status("🛠️ AI Agents Coordinating...", expanded=True) as status:
-            
             st.write("📡 Ingesting papers from arXiv...")
             papers = fetch_papers(query=query, max_results=num_papers)
             
@@ -105,28 +102,18 @@ if st.button("🚀 Execute Autonomous Research"):
 
         with col1:
             st.subheader("📍 Knowledge Retrieval")
-            if not results:
-                st.warning("No relevant context found in current vector space.")
             for r in results:
                 with st.expander(f"📄 {r['title'][:60]}..."):
                     st.write(r['chunk'])
 
         with col2:
             st.subheader("📝 AI Synthetic Report")
-            with st.spinner("BART Agent generating abstractive summary..."):
-                # Call the agent
+            with st.spinner("BART Agent generating summary..."):
                 report = summarize_chunks(results)
                 
-                # Check if the report contains the Hugging Face API error string
-                if "error" in report.lower() or "not supported" in report.lower():
-                    st.markdown(f'<div class="error-box"><b>API Migration Alert:</b> {report}</div>', unsafe_allow_html=True)
+                # Check if report is an error or actual text
+                if "Error" in report or "supported" in report:
+                    st.markdown(f'<div class="error-box">{report}</div>', unsafe_allow_html=True)
                 else:
-                    # Render the actual summary text
                     st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
-                    
-                    st.download_button(
-                        label="📥 Download Research Report",
-                        data=report,
-                        file_name=f"Research_Report_{query.replace(' ', '_')}.txt",
-                        mime="text/plain"
-                    )
+                    st.download_button("📥 Download Report", data=report, file_name="Research_Report.txt")
