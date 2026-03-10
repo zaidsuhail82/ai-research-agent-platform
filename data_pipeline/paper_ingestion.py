@@ -39,3 +39,16 @@ if __name__ == "__main__":
         print(f"Authors: {', '.join(p['authors'][:3])}...")
         print(f"Link: {p['pdf_url']}")
 
+def get_paper_content(paper_id):
+    """Fetches the full abstract/summary for a specific arXiv ID."""
+    try:
+        api_url = f"http://export.arxiv.org/api/query?id_list={paper_id}"
+        response = requests.get(api_url)
+        root = ET.fromstring(response.content)
+        entry = root.find('{http://www.w3.org/2005/Atom}entry')
+        if entry is not None:
+            return entry.find('{http://www.w3.org/2005/Atom}summary').text.strip()
+        return ""
+    except Exception as e:
+        print(f"Error fetching paper content: {e}")
+        return ""
