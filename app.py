@@ -5,24 +5,24 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 import random
 from datetime import datetime
-import io
+import collections
+import re
 
 # ----------------------------------------------------------------
-# 1. CORE DATA MODELS & STATE
+# 1. CORE ENGINE & STATE INITIALIZATION
 # ----------------------------------------------------------------
-# Senior State Management to prevent any "hiding" of data
-STATES = [
-    'search_results', 'selected_papers', 'review_data', 
-    'global_report', 'bibtex_library', 'trend_data', 'gap_analysis'
-]
-for state in STATES:
-    if state not in st.session_state:
-        if state in ['selected_papers', 'bibtex_library']: st.session_state[state] = {}
-        elif state in ['search_results']: st.session_state[state] = []
-        else: st.session_state[state] = None
+# Using a robust dictionary-based state to prevent "KeyError"
+if 'research_state' not in st.session_state:
+    st.session_state.research_state = {
+        'search_results': [],
+        'selected_indices': set(),
+        'master_report': "",
+        'bibtex_log': "",
+        'search_query': ""
+    }
 
 # ----------------------------------------------------------------
-# 2. DESIGN SYSTEM (MICROSOFT FLUENT / GOOGLE MATERIAL)
+# 2. DESIGN SYSTEM & UI OVERRIDES
 # ----------------------------------------------------------------
 st.set_page_config(
     page_title="AI Research Agent | Muhammad Zaid Suhail",
@@ -32,240 +32,224 @@ st.set_page_config(
 
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono&display=swap');
     
     :root {
-        --accent: #00f2fe;
-        --bg-dark: #0b0e14;
-        --glass: rgba(255, 255, 255, 0.04);
+        --glow: #00f2fe;
+        --bg: #0d1117;
+        --card: rgba(22, 27, 34, 0.9);
     }
 
-    .stApp { background-color: var(--bg-dark); color: #e6edf3; font-family: 'Segoe UI', sans-serif; }
-
-    /* PHD Glassmorphism */
-    .phd-card {
-        background: var(--glass);
-        backdrop-filter: blur(15px);
+    .stApp { background: var(--bg); color: #c9d1d9; font-family: 'Inter', sans-serif; }
+    
+    /* Premium Glass Container */
+    .phd-container {
+        background: var(--card);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
-        padding: 25px;
-        margin-bottom: 20px;
-        box-shadow: 0 8px 32px 0 rgba(0,0,0,0.8);
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
-    /* Gradient Typography */
-    .main-title {
-        font-weight: 700;
-        font-size: 3.2rem;
-        background: linear-gradient(120deg, #fff 0%, #00f2fe 100%);
+    /* Professional Title */
+    .hero-text {
+        text-align: center;
+        background: linear-gradient(90deg, #fff, var(--glow));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        text-align: center;
-        letter-spacing: -1.5px;
-        margin-bottom: 5px;
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 0px;
     }
-
-    .sub-brand {
+    
+    .hero-sub {
         text-align: center;
         color: #8b949e;
-        font-family: 'Roboto Mono', monospace;
-        font-size: 0.9rem;
-        letter-spacing: 3px;
-        margin-bottom: 40px;
+        font-family: 'JetBrains Mono';
+        letter-spacing: 2px;
+        margin-bottom: 2rem;
     }
 
     /* Scientific Result Box */
-    .sci-box {
+    .report-area {
         background: #010409;
-        border-left: 3px solid var(--accent);
-        padding: 20px;
-        font-family: 'Segoe UI', serif;
+        border-left: 4px solid var(--glow);
+        padding: 30px;
+        border-radius: 8px;
         line-height: 1.8;
-        border-radius: 0 12px 12px 0;
+        font-size: 1.1rem;
+        color: #e6edf3;
+        white-space: pre-wrap;
     }
 
-    /* Custom Buttons */
+    /* Buttons */
     .stButton>button {
-        background: linear-gradient(45deg, #1f6feb, #4facfe) !important;
-        border-radius: 8px !important;
-        color: white !important;
-        font-weight: 600 !important;
+        width: 100%;
+        background: linear-gradient(45deg, #1f6feb, #00f2fe) !important;
         border: none !important;
-        padding: 12px 24px !important;
-        transition: 0.4s ease;
+        color: white !important;
+        font-weight: 700 !important;
+        height: 3rem;
     }
-    .stButton>button:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0, 242, 254, 0.2); }
     </style>
 """, unsafe_allow_html=True)
 
 # ----------------------------------------------------------------
-# 3. SCIENTIFIC AGENT LOGIC (PHD LEVEL)
+# 3. SCIENTIFIC AGENT UTILITIES
 # ----------------------------------------------------------------
 
-def get_synonym_verb():
-    verbs = ["investigated", "scrutinized", "pioneered", "elucidated", "analyzed", "proposed", "quantified", "evaluated"]
-    return random.choice(verbs)
+def get_academic_verb():
+    return random.choice([
+        "investigated", "pioneered", "elucidated", "scrutinized", 
+        "analyzed", "proposed", "formulated", "evaluated", "demonstrated"
+    ])
 
-def format_citation(paper, style="IEEE", index=1):
-    """Accurate Scientific Citations: IEEE (numeric) vs Harvard (Author-Year)"""
+def format_citation_logic(paper, style, index):
+    """
+    IEEE: [index] Author verb ...
+    Harvard: Author et al. (Year) verb ...
+    """
     authors = paper.get('authors', 'Unknown').split(',')
-    first_author = authors[0].strip()
-    last_name = first_author.split(' ')[-1]
-    initial = first_author[0]
-    year = paper.get('year', datetime.now().year)
-    
-    verb = get_synonym_verb()
+    first_author = authors[0].strip().split(' ')[-1] # Get Last Name
+    year = paper.get('year', '2026')
+    verb = get_academic_verb()
     
     if style == "IEEE":
-        # IEEE: Author [Index] verb ...
-        return f"{last_name} [{index}] {verb}"
+        return f"{first_author} [{index}] {verb}"
     else:
-        # Harvard: Author et al. (Year) verb ...
         et_al = " et al." if len(authors) > 1 else ""
-        return f"{last_name}{et_al} ({year}) {verb}"
+        return f"{first_author}{et_al} ({year}) {verb}"
 
 def generate_bibtex(paper):
-    """Generates valid BibTeX for PhD researchers."""
     authors = paper.get('authors', 'Unknown').replace(',', ' and ')
-    clean_title = paper.get('title', 'Unknown Title').replace('\n', ' ')
-    cite_key = f"{paper.get('authors','auth').split()[0].lower()}{paper.get('year','2026')}"
+    cite_key = f"{paper.get('authors','auth').split()[0].lower()}{paper.get('id','000')}"
     return f"""@article{{{cite_key},
-  title={{{clean_title}}},
+  title={{{paper['title']}}},
   author={{{authors}}},
   year={{{paper.get('year', '2026')}}},
   journal={{arXiv preprint}},
-  url={{https://arxiv.org/abs/{paper.get('id', '')}}}
+  eprint={{{paper['id']}}}
 }}"""
 
 # ----------------------------------------------------------------
-# 4. BRANDING & IDENTITY
+# 4. HEADER & BRANDING
 # ----------------------------------------------------------------
 
-# Logic to find logo in media or root
 logo_path = "media/logo.png" if os.path.exists("media/logo.png") else "logo.png"
-
-if os.path.exists(logo_path):
-    st.image(logo_path, width=150)
-
-st.markdown('<div class="main-title">AI RESEARCH AGENT</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="sub-brand">DESIGNED BY MUHAMMAD ZAID SUHAIL | APPLIED AI & ELECTRICAL ENGINEER</div>', unsafe_allow_html=True)
+col_l, col_c, col_r = st.columns([1, 2, 1])
+with col_c:
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=250)
+    st.markdown('<div class="hero-text">AI RESEARCH AGENT</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="hero-sub">MUHAMMAD ZAID SUHAIL | APPLIED AI & ELECTRICAL ENGINEER</div>', unsafe_allow_html=True)
 
 # ----------------------------------------------------------------
-# 5. INTEGRATED RESEARCH SUITE (TABS)
+# 5. THE FOUR PILLARS (TABS)
 # ----------------------------------------------------------------
 
-tabs = st.tabs(["🚀 Global Discovery", "🔬 Literature Synthesis", "📊 Trend Intelligence", "📂 Research Library"])
+tab1, tab2, tab3, tab4 = st.tabs(["🌐 DISCOVERY", "🔬 SYNTHESIS", "📊 TRENDS", "📂 LIBRARY"])
 
-# --- TAB 1: GLOBAL DISCOVERY ---
-with tabs[0]:
-    st.markdown("### 🌐 Cross-Domain Research Fetcher")
-    with st.container():
-        st.markdown('<div class="phd-card">', unsafe_allow_html=True)
-        col_q, col_cat, col_n = st.columns([4, 2, 1])
-        with col_q:
-            q = st.text_input("Scientific Query", placeholder="e.g. 'Stochastic Control in Smart Grids'")
-        with col_cat:
-            cat = st.selectbox("ArXiv Category", ["cs.AI", "cs.LG", "eess.SY", "stat.ML", "math.OC"])
-        with col_n:
-            limit = st.number_input("Count", 1, 20, 5)
-        
-        if st.button("Initialize Deep Search"):
-            if q:
-                # Assuming your paper_ingestion handles the fetch
-                # For this demo, we'll simulate the response if the import is active
-                from data_pipeline.paper_ingestion import fetch_papers
-                results = fetch_papers(f"{q} cat:{cat}", max_results=limit)
-                st.session_state.search_results = results
-            else: st.error("Please enter a query.")
-        st.markdown('</div>', unsafe_allow_html=True)
+# --- TAB 1: DISCOVERY ---
+with tab1:
+    st.markdown('<div class="phd-container">', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns([4, 2, 2])
+    with c1: 
+        q = st.text_input("Enter Research Keywords", placeholder="e.g. Deep Reinforcement Learning for Microgrids")
+    with c2:
+        cat = st.selectbox("Category", ["cs.AI", "cs.LG", "eess.SY", "math.OC"])
+    with c3:
+        num = st.number_input("Count", 1, 20, 5)
+    
+    if st.button("🔍 Execute Search"):
+        if q:
+            from data_pipeline.paper_ingestion import fetch_papers
+            results = fetch_papers(f"{q} cat:{cat}", max_results=num)
+            st.session_state.research_state['search_results'] = results
+            st.session_state.research_state['selected_indices'] = set() # Reset selection
+        else: st.error("Search query is empty.")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    if st.session_state.search_results:
-        for i, p in enumerate(st.session_state.search_results):
+    if st.session_state.research_state['search_results']:
+        st.write("### Search Results")
+        for i, p in enumerate(st.session_state.research_state['search_results']):
             with st.expander(f"📄 {p['title']}"):
                 st.write(p['summary'])
-                st.markdown(f"**Authors:** {p['authors']} | **ID:** {p['id']}")
-                st.markdown(f"[Link to arXiv](https://arxiv.org/abs/{p['id']})")
-                if st.checkbox("Select for Synthesis", key=f"sel_{i}"):
-                    st.session_state.selected_papers[i] = p
+                st.caption(f"ID: {p['id']} | Authors: {p['authors']}")
+                
+                # Checkbox to add to global state
+                if st.checkbox("Include in Synthesis", key=f"sel_{i}_{p['id']}"):
+                    st.session_state.research_state['selected_indices'].add(i)
                 else:
-                    st.session_state.selected_papers.pop(i, None)
+                    st.session_state.research_state['selected_indices'].discard(i)
 
-# --- TAB 2: LITERATURE SYNTHESIS ---
-with tabs[1]:
-    st.markdown("### 🔬 PhD-Level Review Generator")
-    if not st.session_state.selected_papers:
-        st.info("Select papers in the 'Global Discovery' tab to begin synthesis.")
+# --- TAB 2: SYNTHESIS (FIXED) ---
+with tab2:
+    selected_indices = st.session_state.research_state['selected_indices']
+    if not selected_indices:
+        st.warning("No papers selected. Go to Discovery tab and check 'Include in Synthesis'.")
     else:
-        with st.container():
-            st.markdown('<div class="phd-card">', unsafe_allow_html=True)
-            c1, c2, c3 = st.columns(3)
-            with c1: style = st.selectbox("Scientific Style", ["IEEE", "Harvard"])
-            with c2: words = st.select_slider("Words per Paper", [50, 80, 100, 150, 200, 250, 500])
-            with c3: tone = st.selectbox("Tone", ["Critical", "Narrative", "Comparative"])
-            
-            if st.button("Generate Master Synthesis"):
-                from agents.summarizer_agent import generate_lit_review
-                master_text = ""
-                idx = 1
-                for pid, pdata in st.session_state.selected_papers.items():
-                    with st.spinner(f"Processing Citation {idx}..."):
-                        prefix = format_citation(pdata, style=style, index=idx)
-                        body = generate_lit_review(pdata['summary'], style=style, word_count=words)
-                        master_text += f"{prefix} {body}\n\n"
-                        idx += 1
-                st.session_state.global_report = master_text
+        st.markdown('<div class="phd-container">', unsafe_allow_html=True)
+        col_st, col_wc = st.columns(2)
+        with col_st: style = st.selectbox("Style", ["IEEE", "Harvard"])
+        with col_wc: w_count = st.select_slider("Word Count per Paper", [50, 100, 150, 200, 250], value=100)
+        
+        if st.button("✍️ Generate Literature Review"):
+            from agents.summarizer_agent import generate_lit_review
+            full_text = ""
+            for idx, paper_idx in enumerate(selected_indices):
+                paper = st.session_state.research_state['search_results'][paper_idx]
+                with st.spinner(f"Synthesizing Paper {idx+1}..."):
+                    cite_head = format_citation_logic(paper, style, idx+1)
+                    body = generate_lit_review(paper['summary'], style=style, word_count=w_count)
+                    full_text += f"{cite_head} {body}\n\n"
+            st.session_state.research_state['master_report'] = full_text
         st.markdown('</div>', unsafe_allow_html=True)
 
-        if st.session_state.global_report:
-            st.markdown("#### Generated Manuscript Content")
-            st.markdown(f'<div class="sci-box">{st.session_state.global_report}</div>', unsafe_allow_html=True)
-            
-            # IEEE Citation Footer
-            if style == "IEEE":
-                st.markdown("---")
-                st.markdown("**References**")
-                for i, (pid, pdata) in enumerate(st.session_state.selected_papers.items()):
-                    st.markdown(f"[{i+1}] {pdata['authors']}, \"{pdata['title']}\", arXiv:{pdata['id']}, 2026.")
+        if st.session_state.research_state['master_report']:
+            st.markdown("### Generated Synthesis")
+            st.markdown(f'<div class="report-area">{st.session_state.research_state["master_report"]}</div>', unsafe_allow_html=True)
+            st.download_button("Download Report (.txt)", st.session_state.research_state['master_report'])
 
-# --- TAB 3: TREND INTELLIGENCE ---
-with tabs[2]:
-    st.markdown("### 📊 Field Trend Analysis")
-    if st.session_state.search_results:
-        # Logic to extract keywords from summaries
-        all_text = " ".join([p['summary'] for p in st.session_state.search_results])
-        st.info("Analyzing token frequency in current search batch...")
-        # Placeholder for a real NLP Trend Agent
-        st.write("Top Identified Research Gaps:")
-        st.write("- Efficiency in high-dimensional state spaces")
-        st.write("- Robustness against adversarial perturbation in ML models")
+# --- TAB 3: TRENDS (FIXED LOGIC) ---
+with tab3:
+    st.write("### 📊 NLP Intelligence")
+    results = st.session_state.research_state['search_results']
+    if not results:
+        st.info("Run a search to see trend analysis.")
     else:
-        st.warning("No data to analyze. Run a search first.")
-
-# --- TAB 4: RESEARCH LIBRARY ---
-with tabs[3]:
-    st.markdown("### 📂 Export & Library Management")
-    if st.session_state.selected_papers:
-        bib_all = ""
-        for p in st.session_state.selected_papers.values():
-            bib_all += generate_bibtex(p) + "\n\n"
+        all_summaries = " ".join([p['summary'] for p in results]).lower()
+        # Simple Frequency Analysis for Senior Tooling
+        words = re.findall(r'\w+', all_summaries)
+        stop_words = {'the', 'a', 'in', 'of', 'and', 'to', 'for', 'with', 'on', 'is', 'by', 'this'}
+        filtered_words = [w for w in words if w not in stop_words and len(w) > 4]
+        counts = collections.Counter(filtered_words).most_common(10)
         
-        st.markdown("#### BibTeX Library")
-        st.code(bib_all, language="latex")
-        st.download_button("Export .bib File", bib_all, file_name="citations.bib")
+        st.markdown('<div class="phd-container">', unsafe_allow_html=True)
+        st.write("**Top Keywords in Current Research Field:**")
+        df_trends = pd.DataFrame(counts, columns=['Keyword', 'Frequency'])
+        st.bar_chart(df_trends.set_index('Keyword'))
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# --- TAB 4: LIBRARY (FIXED BIBTEX) ---
+with tab4:
+    st.write("### 📂 BibTeX Library")
+    indices = st.session_state.research_state['selected_indices']
+    if not indices:
+        st.info("Select papers to generate BibTeX entries.")
     else:
-        st.info("Library is empty. Select papers to generate citations.")
+        bib_output = ""
+        for i in indices:
+            paper = st.session_state.research_state['search_results'][i]
+            bib_output += generate_bibtex(paper) + "\n\n"
+        
+        st.markdown('<div class="phd-container">', unsafe_allow_html=True)
+        st.code(bib_output, language="latex")
+        st.download_button("Download .bib File", bib_output, file_name="zaid_references.bib")
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ----------------------------------------------------------------
-# 6. FOOTER (SENIOR CREDENTIALS)
+# 6. FOOTER
 # ----------------------------------------------------------------
-st.markdown("---")
-f1, f2, f3 = st.columns(3)
-with f1:
-    st.caption("Applied AI & Electrical Engineering")
-    st.caption("Muhammad Zaid Suhail © 2026")
-with f2:
-    st.caption("Core Model: Gemini 3 Flash")
-    st.caption("Inference: BART-Large-CNN")
-with f3:
-    st.caption("Project: AI Research Agent")
-    st.caption("Status: Enterprise Deployment Ready")
+st.divider()
+st.caption(f"Developed by Muhammad Zaid Suhail | AI Research Agent v4.0 | © {datetime.now().year}")
