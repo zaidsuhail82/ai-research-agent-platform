@@ -1,40 +1,36 @@
 # agents/summarizer_agent.py
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
-import torch
+import requests
+import streamlit as st
 
-MODEL_NAME = "facebook/bart-large-cnn"
-
-# Load model & tokenizer (allow downloading)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
-
-# Use GPU if available, otherwise CPU
-device = 0 if torch.cuda.is_available() else -1
-
-# Summarization pipeline
-summarizer = pipeline(
-    task="summarization",
-    model=model,
-    tokenizer=tokenizer,
-    device=device
-)
+# Hugging Face Inference API (no local model needed)
+API_URL = "https://api-inference.huggingface.co/models/facebook/bart-large-cnn"
+headers = {"Authorization": f"Bearer {st.secrets['HUGGINGFACE_TOKEN']}"}
 
 def summarize_chunks(chunks):
     """
-    Summarize a list of text chunks using BART.
+    Summarize a list of text chunks using Hugging Face API.
+    Returns a clean logical summary.
     """
     if not chunks:
         return "No text provided for summarization."
 
-    # Combine all chunks
-    text = " ".join([c["chunk"] for c in chunks])
-    text = text[:3000]  # truncate long input
+    # Combine chunks
+    text_to_summarize = " ".join([c["chunk"] for c in chunks])
+    text_to_summarize = text_to_summarize[:3000]  # truncate for API limits
 
-    summary = summarizer(
-        text,
-        max_length=200,
-        min_length=50,
-        do_sample=False
-    )
+    payload = {
+        "inputs": text_to_summarize,
+        "parameters": {"max_length": 200, "min_length": 50, "do_sample": False}
+    }
 
-    return summary[0]["summary_text"]
+    try:
+        response = requests.post(API_URL, headers=headers, json=payload)
+        result = response.json()
+
+        if isinstance(result, list) and "summary_text" in result[0]:
+            return result[0]["summary_text"]
+        else:
+            return f"Error generating summary: {result}"
+
+    except Exception as e:
+        return f"Summarization failed: {str(e)}"
