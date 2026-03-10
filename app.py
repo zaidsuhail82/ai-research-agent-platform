@@ -3,7 +3,7 @@ import os
 import requests
 import xml.etree.ElementTree as ET
 # Assuming these imports are correct based on your file structure
-from data_pipeline.paper_ingestion import fetch_papers, get_paper_content
+from data_pipeline.paper_ingestion import fetch_papers
 from data_pipeline.document_processor import chunk_text
 from rag.embeddings import embed_text
 from rag.vector_store import add_embedding, search_embedding
@@ -415,3 +415,4 @@ elif selected_tool == "Global Research":
                         st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
                         st.code(report, language=None) # Clickable copy-box
     st.markdown('</div>', unsafe_allow_html=True)
+
