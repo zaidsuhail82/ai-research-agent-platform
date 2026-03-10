@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 import os
 from data_pipeline.paper_ingestion import fetch_papers
@@ -7,56 +6,64 @@ from rag.embeddings import embed_text
 from rag.vector_store import add_embedding, search_embedding
 from agents.summarizer_agent import summarize_chunks
 
+# 1. PAGE CONFIGURATION (Must be the very first Streamlit command)
 st.set_page_config(
     page_title="Zaid AI | Research Platform",
-    page_icon="logo.png", # This puts your logo in the browser tab!
-    layout="wide"
-)
-
-
-# 1. PAGE CONFIGURATION (Modern Look)
-st.set_page_config(
-    page_title="Zaid | AI Research Platform",
-    page_icon="🤖",
+    page_icon="media/logo.png", # Uses your new logo for the browser tab
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# 2. CUSTOM CSS (For that "High-End" feel)
+# 2. CUSTOM CSS (Engineering Aesthetic)
 st.markdown("""
     <style>
-    .main { background-color: #f5f7f9; }
-    .stButton>button { width: 100%; border-radius: 5px; height: 3em; background-color: #007bff; color: white; }
-    .report-box { padding: 20px; border-radius: 10px; background-color: white; border-left: 5px solid #007bff; }
+    .main { background-color: #f8f9fa; }
+    .stButton>button { 
+        width: 100%; 
+        border-radius: 8px; 
+        height: 3.5em; 
+        background-color: #00bcd4; 
+        color: white;
+        font-weight: bold;
+        border: none;
+    }
+    .report-box { 
+        padding: 25px; 
+        border-radius: 12px; 
+        background-color: white; 
+        border-left: 6px solid #00bcd4;
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. SIDEBAR (Personal Branding & Logo)
+# 3. SIDEBAR (Branding & Parameters)
 with st.sidebar:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", width=200)
+    # Pointing to your new media folder
+    logo_path = "media/logo.png"
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=200)
+    else:
+        st.title("Synthetic Loop AI")
     
-    st.title("Project Credits")
-    st.markdown("""
+    st.markdown("### Project Credits")
+    st.info("""
     **Architect:** M. Zaid Suhail  
-    *MSc Applied Artificial Intelligence* *MSc Electrical Engineering*
+    *Applied AI & Electrical Engineer*
     
-    ---
-    **System Status:** 🟢 Operational  
-    **Model:** BART-Large-CNN  
-    **Database:** In-Memory Vector Index
+    **Status:** 🟢 Operational  
+    **Core:** RAG + BART-Large
     """)
     
     st.divider()
-    st.header("⚙️ Research Parameters")
-    # Using Session State to ensure these values are locked in during the run
+    st.header("⚙️ Parameters")
     num_papers = st.slider("Papers to Ingest", 1, 10, 5)
     c_size = st.select_slider("Chunk Granularity", options=[300, 500, 800, 1200], value=500)
     top_k = st.number_input("Retrieval Top-K", value=5)
 
 # 4. MAIN INTERFACE
 st.title("🔬 Autonomous AI Research Agent")
-st.caption("Engineered by M. Zaid Suhail | London South Bank University")
+st.caption("A Persistent Learning Loop for Scientific Discovery | Engineered by M. Zaid Suhail")
 
 query = st.text_input("Enter Research Topic", placeholder="e.g., Neural Ordinary Differential Equations in Robotics")
 
@@ -64,8 +71,6 @@ if st.button("🚀 Execute Autonomous Research"):
     if not query:
         st.error("Please provide a research query.")
     else:
-        # FIX: CLEAR PREVIOUS DATA
-        # To make results dynamic, we simulate a fresh environment per run
         with st.status("🛠️ AI Agents Coordinating...", expanded=True) as status:
             
             st.write("📡 Ingesting papers from arXiv...")
@@ -73,7 +78,6 @@ if st.button("🚀 Execute Autonomous Research"):
             
             st.write(f"🧩 Processing and Chunking at {c_size} tokens...")
             for paper in papers:
-                # We pass the slider value here to make it dynamic!
                 chunks = chunk_text(paper["summary"], chunk_size=c_size)
                 for chunk in chunks:
                     vector = embed_text(chunk)
@@ -81,7 +85,6 @@ if st.button("🚀 Execute Autonomous Research"):
 
             st.write("🧠 Retrieving Semantic Context...")
             query_vector = embed_text(query)
-            # Use the 'top_k' from user input
             results = search_embedding(query_vector, k=top_k)
             
             status.update(label="Analysis Complete", state="complete")
@@ -98,15 +101,12 @@ if st.button("🚀 Execute Autonomous Research"):
         with col2:
             st.subheader("📝 AI Synthetic Report")
             with st.spinner("BART Agent generating abstractive summary..."):
-                # We pass the results to the agent
                 report = summarize_chunks(results)
                 st.markdown(f'<div class="report-box">{report}</div>', unsafe_allow_html=True)
                 
-                # Professional Feature: Download Button
                 st.download_button(
                     label="📥 Download Research Report",
                     data=report,
                     file_name=f"Research_Report_{query.replace(' ', '_')}.txt",
                     mime="text/plain"
                 )
-
